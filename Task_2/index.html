@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess Game</title>
+
+    <style>
+        * {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* #container {
+            width: 50%;
+            margin: 0px auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        */
+        label {
+            background-color: rgb(0, 118, 253);
+            color: white;
+            padding: 10px 20px;
+            font-size: 20px;
+            border-radius: 5px;
+        }
+
+        input {
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 20px;
+        }
+
+        #inp {
+            border: 1px solid black;
+            margin-left: 15px;
+        }
+
+        .flex {
+            display: flex;
+            justify-content: center;
+        }
+
+        #butt {
+            margin-top: 25px;
+            cursor: pointer;
+            background-color: purple;
+            color: rgb(238, 238, 238);
+            border: 1px solid white;
+            width: 100%;
+        }
+
+        .float-right {
+            text-align: right;
+            margin-bottom: 10px;
+            color: gray;
+        }
+
+        #game_starter {
+            background-color: rgb(0, 253, 0);
+            border: none;
+            margin-top: 20px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        #warning {
+            opacity: 0;
+            transition: opacity 1s ease-out;
+            color: red;
+            font-size: 30px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        #w_guess,
+        #c_guess {
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            text-align: center;
+            font-size: 30px;
+
+        }
+        #w_guess{
+            color: red;
+        }
+
+        #c_guess{
+            color: green;
+        }
+
+        #circle {
+            width: 10px;
+            height: 10px;
+            border-radius: 25px;
+            background-color: red;
+            border: 1px solid black;
+        }
+         .vh_align{
+            margin: 0px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+         }
+         #blackScreen{
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            opacity: 0.5;
+            display: none;
+         }
+         #turnInfo{
+            padding: 10px 20px;
+            background-color: antiquewhite;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            display: none;
+         }
+         .cross_butt{
+            float: right;
+            width: 20px;
+            cursor: pointer;
+         }
+    </style>
+
+</head>
+
+<body>
+
+    <p id="warning"></p>
+    <p id="w_guess"></p>
+    <p id="c_guess">Correct Guess</p>
+
+    <div class = "vh_align">
+        <div style="display: flex;justify-content: space-between;">
+        <span id="circle"></span>
+        <span class="float-right">Remaining Turns: <span id="turnC">10</span></span>
+        </div>
+        <div class="flex">
+            <label for="inp">Guess Number</label>
+            <input type="number" id="inp" placeholder="1-100"><br>
+        </div>
+        <input type="button" value="Guess" id="butt">
+        <input type="button" value="Start Game" id="game_starter" onclick="startGame()">
+    </div>
+
+    <!-- popover -->
+    <div id = "blackScreen"></div>
+    <div id = "turnInfo" class = "vh_align">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class = "cross_butt" fill = "#377ffd" onclick="closeWinInfo()">
+            <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z"/>
+        </svg>
+        <h2>Congratulations! You Won the Game</h2>
+        <p>No of turns used: <span id = "turnUsed"></span></p>
+    </div>
+
+    <script>
+        let turns = 10;
+        //to display error message
+        let warn = document.getElementById("warning");
+        //to display turns left
+        let turnSel = document.getElementById("turnC");
+        function refreshTurn() {
+            turns = 10;
+            turnSel.textContent = turns;
+        }
+
+        function decTurn() {
+            turns--;
+            //display updated turns
+            turnSel.textContent = turns;
+            if (turns == 0) {
+                return false;
+            }
+            else {
+                return true;
+            }
+        }
+        function displayErr(mess) {
+            warn.textContent = mess;
+            warn.style.opacity = 1;
+            setTimeout(function () {
+                warn.style.opacity = 0;
+            }, 5000);
+
+        }
+        
+        //set timout variables
+        let c_guessTimout = null;
+        let w_guessTimout = null;
+        function showGuessInfo(flag) {
+            let c_guess = document.getElementById("c_guess");
+            let w_guess = document.getElementById("w_guess");
+            //to display positive message
+            if (flag) {
+                //clear timout
+                clearTimeout(c_guessTimout);
+                c_guess.style.opacity = 1;
+                c_guessTimout = setTimeout(function () {
+                    c_guess.style.opacity = 0;
+                }, 5000);
+            }
+            //to display negative
+            else {
+                if(document.getElementById("inp").value < target_num){
+                    w_guess.textContent = "Your Guess is too low";
+                }
+                else{
+                    w_guess.textContent = "Your Guess is too high";
+                }
+                //clear timout
+                clearTimeout(w_guessTimout);
+                w_guess.style.opacity = 1;
+                w_guessTimout = setTimeout(function () {
+                    w_guess.style.opacity = 0;
+                }, 5000);
+            }
+        }
+
+        function displayWinInfo(){
+            //display black screen
+            document.getElementById("blackScreen").style.display = "block";
+            //display win info
+            document.getElementById("turnInfo").style.display = "block";
+            //display turns used
+            document.getElementById("turnUsed").textContent = 10 - turns;
+        }
+
+        function closeWinInfo(){
+            //remove black screen
+            document.getElementById("blackScreen").style.display = "none";
+            //remove win info
+            document.getElementById("turnInfo").style.display = "none";
+        }
+
+        let init_game = false;
+        let = 0;
+        //circle
+        let circle = document.getElementById("circle");
+        function startGame() {
+            //if game is already started
+            if (init_game) {
+                displayErr("Game has already started");
+                return;
+            }
+
+            //init turns
+            refreshTurn();
+
+            init_game = true;
+
+            //generate random number between 1-100
+            target_num = Math.round((Math.random() * 100) + 1);
+
+            //make circle green
+            circle.style.backgroundColor = "green";
+        }
+
+        document.getElementById("butt").addEventListener("click", function (ev) {
+            //if game has already started
+            if (!init_game) {
+                //display error
+                displayErr("Game has not yet started");
+                return;
+            }
+
+            //if guess is not correct
+            if (document.getElementById("inp").value != target_num) {
+                //if input field is empty
+                if (document.getElementById("inp").value.length == 0) {
+                    displayErr("Input field is empty");
+                    return;
+                }
+                if (!decTurn()) {
+                    //if no turn left
+                    endGame(false); //end game
+                    displayErr("You lost the Game");
+                }
+                //display incorrect guess info
+                else{
+                    showGuessInfo(false);
+                }
+            }
+            //if guess is correct
+            else {
+                //display winner
+                displayWinner();
+            }
+        });
+
+        function displayWinner() {
+            displayWinInfo();
+            //end the game
+            endGame(true);
+        }
+
+        function endGame(flag) {
+            init_game = false;
+            showGuessInfo(flag);
+            //initialize turns
+            refreshTurn();
+            circle.style.backgroundColor = "red";
+        }
+    </script>
+
+</body>
+
+</html>
